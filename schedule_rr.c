@@ -56,48 +56,45 @@ void add(char *name, int priority, int burst)
     }
 }
 
-void schedule() {
-    int quantum = 10;  
-    int totalElapsed = 0;   
-    int totalTurnaroundTime = 0; 
-    int taskCount = 0;           
-    struct node *current;
 
-    current = head;
+
+void schedule() {
+    int quantum = 10;                
+    int totalElapsed = 0;            
+    int totalTurnaroundTime = 0;     
+    int taskCount = 0;              
+    struct node *current = head;
+
     while (current != NULL) {
         taskCount++;
         current = current->next;
     }
-
     int tasksRemaining = 1;
 
-  
     while (tasksRemaining > 0) {
         tasksRemaining = 0; 
-
-        current = head; 
+        current = head;
         while (current != NULL) {
             if (current->task->burst > 0) { 
                 tasksRemaining++;
 
+                int timeSlice;
                 if (current->task->burst <= quantum) {
-                    totalElapsed += current->task->burst;
-                    printf("Task %s completed at %d ms.\n", current->task->name, totalElapsed);
-                    
-                    totalTurnaroundTime += totalElapsed;
-
-                    current->task->burst = 0;
+                    timeSlice = current->task->burst;
                 } else {
-                    current->task->burst -= quantum;
-                    totalElapsed += quantum;
-                    printf("Task %s ran for %d ms, remaining burst time: %d ms\n",
-                           current->task->name, quantum, current->task->burst);
+                    timeSlice = quantum;
                 }
+                run(current->task, timeSlice);
+                current->task->burst -= timeSlice;
+                totalElapsed += timeSlice;
+
+                if (current->task->burst <= 0) {
+                    totalTurnaroundTime += totalElapsed;
+                } 
             }
             current = current->next; 
         }
     }
-
     if (taskCount > 0) {
         float averageTurnaroundTime = (float)totalTurnaroundTime / taskCount;
         printf("Average Turnaround Time: %.2f ms\n", averageTurnaroundTime);
