@@ -8,8 +8,10 @@
 #include "task.h"
 #include "list.h"
 #include "cpu.h"
-#include <string.h>
 //Your code and design here
+
+#include <string.h>
+
 
 struct node *head = NULL; 
 
@@ -60,6 +62,8 @@ void schedule()
     int count = 0; 
     while(current != NULL)
     {
+
+        run(current->task, current->task->burst);
         printf("Task %s: Waiting Time = %d\n", current->task->name, waitingTime);
         totalWait += waitingTime; 
 
