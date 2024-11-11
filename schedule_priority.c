@@ -1,6 +1,8 @@
 /*
  * Priority scheduling
  */
+
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stddef.h>
@@ -8,25 +10,23 @@
 #include "task.h"
 #include "list.h"
 #include "cpu.h"
-
+#include "string.h"
 /*
  * Your code and design here:
  */
 
-#include <string.h>
 
-struct node *head = NULL; 
+struct node *head = NULL;
 
 void add(char *name, int priority, int burst) {
     Task *newTask = (Task *)malloc(sizeof(Task));
-    if (newTask == NULL) 
-    {
+    if (newTask == NULL) {
         fprintf(stderr, "Error: Could not allocate memory for new task\n");
         return;
     }
+
     newTask->name = (char *)malloc(strlen(name) + 1);
-    if (newTask->name == NULL) 
-    {
+    if (newTask->name == NULL) {
         fprintf(stderr, "Error: Could not allocate memory for task name\n");
         free(newTask);
         return;
@@ -38,50 +38,55 @@ void add(char *name, int priority, int burst) {
     newTask->tid = 0;
 
     struct node *newNode = (struct node *)malloc(sizeof(struct node));
-    if (newNode == NULL) 
-    {
+    if (newNode == NULL) {
         fprintf(stderr, "Error: Could not allocate memory for new node\n");
         free(newTask->name);
         free(newTask);
         return;
     }
     newNode->task = newTask;
-    newNode->next = NULL;
+    newNode->next = head;
+    head = newNode;
+}
 
-    if (head == NULL) 
-    {
-        head = newNode;
-    } else {
+void schedule() {
+    int totalWait = 0;
+    int waitingTime = 0;
+    int count = 0;
+
+    while (head != NULL) {
+        struct node *highestPriorityNode = head;
         struct node *current = head;
-        while (current->next != NULL) 
-        {
+        struct node *prevHighest = NULL;
+
+        while (current->next != NULL) {
+            if (current->next->task->priority > highestPriorityNode->task->priority) {
+                highestPriorityNode = current->next;
+                prevHighest = current;
+            }
             current = current->next;
         }
-        current->next = newNode;
-    }
-}
-void schedule()
-{
-    struct node *current = head; 
-    int totalWait = 0; 
-    int waitingTime =0; 
-    int count = 0; 
-    while(current != NULL)
-    {   if(current->task == NULL)
-    {
-        fprintf(stderr, "Error: Task is NULL in the list\n"); 
-    }
-        printf("Task %s (Priority %d): Waiting Time = %d\n", current->task->name, current->task->priority, waitingTime);
-        totalWait += waitingTime; 
 
-        waitingTime += current->task->burst; 
+        if (highestPriorityNode != head) {
+            prevHighest->next = highestPriorityNode->next;
+        } else {
+            head = head->next;
+        }
 
-        current = current->next; 
-        count++; 
+        run(highestPriorityNode->task, highestPriorityNode->task->burst);
+
+        // Calculate total waiting time
+        totalWait += waitingTime;
+        waitingTime += highestPriorityNode->task->burst;
+        count++;
+
+        free(highestPriorityNode->task->name);
+        free(highestPriorityNode->task);
+        free(highestPriorityNode);
     }
-    if (count > 0)
-    {
-        float averageWait = (float)totalWait/ count; 
+
+    if (count > 0) {
+        float averageWait = (float)totalWait / count;
         printf("Average Waiting Time: %.2f\n", averageWait);
-    }  
+    }
 }
